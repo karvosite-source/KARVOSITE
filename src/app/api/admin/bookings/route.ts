@@ -1,0 +1,2 @@
+import {isAdmin} from "@/lib/auth";import {database} from "@/lib/db";
+export async function GET(){if(!await isAdmin())return Response.json({error:"Unauthorized"},{status:401});try{const bookings=await database()`SELECT reference,name,phone,email,service,address,notes,status,created_at FROM bookings ORDER BY created_at DESC LIMIT 200`;return Response.json({bookings})}catch{return Response.json({error:"Booking service is unavailable."},{status:503})}}
