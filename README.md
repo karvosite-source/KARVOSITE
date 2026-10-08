@@ -1,19 +1,15 @@
-# KARVO by NEOCRAFT LLP — Website & Admin demo
+# KARVO
 
-## Folder structure
-- `customer/index.html` — latest customer marketplace with ₹299 site-visit-fee UI and embedded AI images
-- `customer/about.html`, `contact.html`, `terms.html`, `privacy.html`, `refund.html` — newly added company and legal-information pages
-- `admin/index.html` — admin dashboard prototype with payment status fields
+KARVO is a Next.js customer booking application for NEOCRAFT LLP.
 
-## Important before publishing
-1. Insert NEOCRAFT LLP verified legal name, registered office address, LLPIN and GSTIN (if applicable), registered company address and any additional official support/privacy email as needed.
-2. Obtain legal review and approve the draft Terms, Privacy Policy, and Refund/Cancellation Policy. Determine final cancellation deadlines and refund time frames.
-3. Configure hosting and server-side authenticated customer/admin API plus central database. These HTML files do not sync between browsers or process real ₹299 payments.
-4. Add a verified payment-gateway integration with signed server-side webhook/payment verification before confirming visits.
-5. Do not confuse AI-generated design illustrations with photographs of completed work.
+## Local development
 
-Open `customer/index.html` locally and follow footer links to the new pages. Open `admin/index.html` separately.
+Install dependencies with `npm install`, then run `npm run dev`.
 
-## Confirmed customer support contacts
-- Phone/WhatsApp: +91 91666 91274
-- Email: karvosite@gmail.com
+## Database
+
+Create a PostgreSQL database and execute `database.sql`. Set `DATABASE_URL` in your deployment environment; see `.env.example` for the required format. The booking API rejects malformed requests and stores valid requests in the `bookings` table.
+
+## Production status
+
+The customer booking flow is implemented. Payment collection and authenticated administration are not enabled yet because a payment provider and production admin identity have not been selected. Do not collect the ₹299 fee until server-side orders and signed payment webhooks are implemented.
