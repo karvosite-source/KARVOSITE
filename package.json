@@ -1,0 +1,7 @@
+{
+  "name": "karvosite",
+  "private": true,
+  "scripts": {
+    "vercel-build": "node -e \"console.log('Static KARVO deployment: no build step required')\""
+  }
+}
