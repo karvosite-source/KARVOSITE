@@ -37,12 +37,8 @@ module.exports = async function handler(req, res) {
   const productId = process.env.DODO_PAYMENTS_PRODUCT_ID;
   const environment = process.env.DODO_PAYMENTS_ENVIRONMENT || 'live_mode';
   if (!apiKey || !productId) {
-    const missing = [];
-    if (!apiKey) missing.push('DODO_PAYMENTS_API_KEY');
-    if (!productId) missing.push('DODO_PAYMENTS_PRODUCT_ID');
     return json(res, 500, {
       error: 'Dodo Payments is not configured',
-      missing,
       setup: 'Set DODO_PAYMENTS_API_KEY and DODO_PAYMENTS_PRODUCT_ID in Vercel environment variables.',
     });
   }
