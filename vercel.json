@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/images/:path*", "destination": "/customer/images/:path*" },
     { "source": "/", "destination": "/customer/index.html" },
     { "source": "/about", "destination": "/customer/about.html" },
     { "source": "/contact", "destination": "/customer/contact.html" },
