@@ -30,7 +30,7 @@ function base64url(value) {
 }
 
 function sign(payload) {
-  const secret = process.env.OTP_SECRET || process.env.WHATSAPP_TOKEN || 'karvo-local-otp-secret';
+  const secret = process.env.OTP_SECRET || 'karvo-local-otp-secret';
   return crypto.createHmac('sha256', secret).update(payload).digest('base64url');
 }
 
@@ -66,29 +66,6 @@ async function sendViaCustomOtpApi(phone, otp, message) {
   return { response, data };
 }
 
-async function sendViaWhatsAppCloud(phone, message) {
-  const token = process.env.WHATSAPP_TOKEN;
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  if (!token || !phoneNumberId) return null;
-  const graphVersion = clean(process.env.WHATSAPP_GRAPH_VERSION || 'v25.0', 20);
-  const response = await fetch(`https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${token}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
-      to: phone,
-      type: 'text',
-      text: { preview_url: false, body: message },
-    }),
-  });
-  const data = await response.json().catch(() => ({}));
-  return { response, data };
-}
-
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('allow', 'POST');
@@ -111,11 +88,11 @@ module.exports = async function handler(req, res) {
     const expiresAt = Date.now() + 5 * 60 * 1000;
     const token = makeToken(phone, otp, expiresAt);
     const message = `Your KARVO verification OTP is ${otp}. It is valid for 5 minutes. Do not share this code.`;
-    const result = (await sendViaCustomOtpApi(phone, otp, message)) || (await sendViaWhatsAppCloud(phone, message));
+    const result = await sendViaCustomOtpApi(phone, otp, message);
     if (!result) {
       return json(res, 500, {
         error: 'OTP sender is not configured',
-        setup: 'Set OTP_API_URL/SMS_API_URL or WhatsApp Cloud API variables in Vercel.',
+        setup: 'Set OTP_API_URL or SMS_API_URL in Vercel.',
       });
     }
     if (!result.response.ok) return json(res, result.response.status || 502, { error: 'Unable to send OTP', details: result.data });

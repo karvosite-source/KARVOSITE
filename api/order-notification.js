@@ -72,47 +72,35 @@ function formatMessage(order, eventType) {
   return lines.join('\n').slice(0, 3900);
 }
 
-async function sendViaCustomApi(message, order) {
-  const url = process.env.WHATSAPP_API_URL;
+async function sendViaSmsApi(message, order) {
+  const url = process.env.ORDER_SMS_API_URL || process.env.SMS_API_URL;
   if (!url) return null;
   const headers = { 'content-type': 'application/json' };
-  if (process.env.WHATSAPP_API_KEY) headers.authorization = `Bearer ${process.env.WHATSAPP_API_KEY}`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      to: normalizePhone(process.env.WHATSAPP_TO || process.env.WHATSAPP_ADMIN_PHONE || '919166691274'),
-      message,
-      order,
-    }),
-  });
-  const data = await response.json().catch(() => ({}));
-  return { response, data };
-}
+  const key = process.env.ORDER_SMS_API_KEY || process.env.SMS_API_KEY;
+  if (key) headers.authorization = `Bearer ${key}`;
+  const recipients = (process.env.ORDER_SMS_TO || process.env.SUPPORT_PHONE || '919166691274')
+    .split(',')
+    .map(normalizePhone)
+    .filter(Boolean);
+  if (order.phone) recipients.push(normalizePhone(order.phone));
+  const uniqueRecipients = [...new Set(recipients)];
+  if (!uniqueRecipients.length) return null;
 
-async function sendViaCloudApi(message) {
-  const token = process.env.WHATSAPP_TOKEN;
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const to = normalizePhone(process.env.WHATSAPP_TO || process.env.WHATSAPP_ADMIN_PHONE || '919166691274');
-  if (!token || !phoneNumberId || !to) return null;
-  const graphVersion = clean(process.env.WHATSAPP_GRAPH_VERSION || 'v25.0', 20);
-
-  const response = await fetch(`https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${token}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
-      to,
-      type: 'text',
-      text: { preview_url: false, body: message },
-    }),
-  });
-  const data = await response.json().catch(() => ({}));
-  return { response, data };
+  const sends = [];
+  for (const to of uniqueRecipients) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ to, message, order }),
+    });
+    const data = await response.json().catch(() => ({}));
+    sends.push({ to, response, data });
+  }
+  const failed = sends.find((item) => !item.response.ok);
+  return {
+    response: { ok: !failed, status: failed ? failed.response.status : 200 },
+    data: sends.map((item) => ({ to: item.to, ok: item.response.ok, status: item.response.status, data: item.data })),
+  };
 }
 
 async function sendViaCustomEmailApi(subject, message, order) {
@@ -182,23 +170,23 @@ module.exports = async function handler(req, res) {
   const message = formatMessage(order, body.eventType);
   const results = {};
   try {
-    const whatsapp = (await sendViaCustomApi(message, order)) || (await sendViaCloudApi(message));
-    if (whatsapp) {
-      results.whatsapp = whatsapp.response.ok;
-      if (!whatsapp.response.ok) results.whatsappDetails = whatsapp.data;
+    const sms = await sendViaSmsApi(message, order);
+    if (sms) {
+      results.sms = sms.response.ok;
+      if (!sms.response.ok) results.smsDetails = sms.data;
     }
     const email = await sendEmail(message, order);
     if (email) {
       results.email = email.response.ok;
       if (!email.response.ok) results.emailDetails = email.data;
     }
-    if (!whatsapp && !email) {
+    if (!sms && !email) {
       return json(res, 500, {
         error: 'Order notification APIs are not configured',
-        setup: 'Set WhatsApp env vars and RESEND_API_KEY/ORDER_EMAIL_TO, or custom WHATSAPP_API_URL/EMAIL_API_URL.',
+        setup: 'Set SMS_API_URL/SMS_API_KEY and RESEND_API_KEY/ORDER_EMAIL_TO, or custom EMAIL_API_URL.',
       });
     }
-    if ((whatsapp && !whatsapp.response.ok) || (email && !email.response.ok)) return json(res, 502, { error: 'One or more notifications failed', results });
+    if ((sms && !sms.response.ok) || (email && !email.response.ok)) return json(res, 502, { error: 'One or more notifications failed', results });
     return json(res, 200, { ok: true, results });
   } catch (err) {
     return json(res, 502, { error: 'Order notification failed', details: err.message });
