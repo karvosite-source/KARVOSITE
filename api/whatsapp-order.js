@@ -79,7 +79,7 @@ async function sendViaCustomApi(message, order) {
     method: 'POST',
     headers,
     body: JSON.stringify({
-      to: normalizePhone(process.env.WHATSAPP_TO || process.env.WHATSAPP_ADMIN_PHONE),
+      to: normalizePhone(process.env.WHATSAPP_TO || process.env.WHATSAPP_ADMIN_PHONE || '919166691274'),
       message,
       order,
     }),
@@ -91,10 +91,11 @@ async function sendViaCustomApi(message, order) {
 async function sendViaCloudApi(message) {
   const token = process.env.WHATSAPP_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const to = normalizePhone(process.env.WHATSAPP_TO || process.env.WHATSAPP_ADMIN_PHONE);
+  const to = normalizePhone(process.env.WHATSAPP_TO || process.env.WHATSAPP_ADMIN_PHONE || '919166691274');
   if (!token || !phoneNumberId || !to) return null;
+  const graphVersion = clean(process.env.WHATSAPP_GRAPH_VERSION || 'v25.0', 20);
 
-  const response = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
+  const response = await fetch(`https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`, {
     method: 'POST',
     headers: {
       authorization: `Bearer ${token}`,

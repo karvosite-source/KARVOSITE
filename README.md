@@ -17,3 +17,39 @@ Open `customer/index.html` locally and follow footer links to the new pages. Ope
 ## Confirmed customer support contacts
 - Phone/WhatsApp: +91 91666 91274
 - Email: karvosite@gmail.com
+
+## WhatsApp booking notifications
+Product orders and service quote bookings call `POST /api/whatsapp-order` after the customer places an order. The endpoint sends a booking summary to the KARVO WhatsApp number when the WhatsApp credentials are configured in Vercel.
+
+### Meta WhatsApp Cloud API
+Set these Vercel environment variables:
+
+```sh
+vercel env add WHATSAPP_TOKEN production
+vercel env add WHATSAPP_PHONE_NUMBER_ID production
+vercel env add WHATSAPP_TO production
+vercel env add WHATSAPP_GRAPH_VERSION production
+```
+
+`WHATSAPP_TO` is optional and defaults to the current KARVO support WhatsApp number `919166691274`. `WHATSAPP_GRAPH_VERSION` is optional; the endpoint defaults to `v25.0`.
+
+### Custom WhatsApp provider API
+If KARVO uses another WhatsApp provider, set:
+
+```sh
+vercel env add WHATSAPP_API_URL production
+vercel env add WHATSAPP_API_KEY production
+vercel env add WHATSAPP_TO production
+```
+
+The custom API receives JSON:
+
+```json
+{
+  "to": "919166691274",
+  "message": "New KARVO booking summary...",
+  "order": {}
+}
+```
+
+After changing environment variables, redeploy the site.
