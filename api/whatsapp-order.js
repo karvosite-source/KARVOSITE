@@ -48,6 +48,8 @@ function formatMessage(order, eventType) {
     `Location: ${clean(order.city || order.address, 240) || 'Not provided'}`,
     `Address: ${clean(order.address, 400) || 'Not provided'}`,
     `Payment: ${clean(order.paymentMethod, 120)} | ${clean(order.paymentStatus, 120)}`,
+    `Item total: ${money(order.subtotal || order.orderTotal)}`,
+    `Delivery fee: ${money(order.deliveryFee || 0)}`,
     `Total: ${money(order.orderTotal)}`,
     '',
     'Items:',
