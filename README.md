@@ -21,7 +21,16 @@ Open `customer/index.html` locally and follow footer links to the new pages. Ope
 ## SMS and email order notifications
 Product orders and service quote bookings call `POST /api/order-notification` after the customer places an order. The endpoint sends booking summaries by SMS and email when provider credentials are configured in Vercel.
 
-For SMS OTP and order SMS, set:
+For SMS OTP and order SMS with Fast2SMS, set:
+
+```sh
+vercel env add FAST2SMS_API_KEY production
+vercel env add ORDER_SMS_TO production
+```
+
+`ORDER_SMS_TO` is optional and defaults to the KARVO support mobile number `919166691274`. It can be a comma-separated list. The customer phone number is also included on order SMS when available.
+
+If KARVO uses another SMS provider instead of Fast2SMS, set:
 
 ```sh
 vercel env add SMS_API_URL production
@@ -29,11 +38,20 @@ vercel env add SMS_API_KEY production
 vercel env add ORDER_SMS_TO production
 ```
 
-`ORDER_SMS_TO` is optional and defaults to the KARVO support mobile number `919166691274`. It can be a comma-separated list. The customer phone number is also included on order SMS when available.
+The custom SMS API receives JSON:
+
+```json
+{
+  "to": "919166691274",
+  "message": "New KARVO Product order...",
+  "order": {}
+}
+```
 
 ## Mobile OTP verification
 Checkout now requires the customer to verify their mobile number with OTP before placing an order. `POST /api/auth-otp` can send OTPs through either:
 
+- `FAST2SMS_API_KEY` for Fast2SMS
 - `OTP_API_URL` / `OTP_API_KEY` or `SMS_API_URL` / `SMS_API_KEY` for a custom SMS/OTP provider
 
 Set a private signing secret:
@@ -60,7 +78,7 @@ vercel env add EMAIL_API_URL production
 vercel env add EMAIL_API_KEY production
 ```
 
-The SMS API receives JSON:
+The custom SMS API receives JSON:
 
 ```json
 {

@@ -25,6 +25,10 @@ function normalizePhone(value) {
   return digits;
 }
 
+function indianMobile(phone) {
+  return String(phone || '').replace(/\D/g, '').replace(/^91/, '');
+}
+
 function base64url(value) {
   return Buffer.from(value).toString('base64url');
 }
@@ -66,6 +70,27 @@ async function sendViaCustomOtpApi(phone, otp, message) {
   return { response, data };
 }
 
+async function sendViaFast2Sms(phone, message) {
+  const apiKey = process.env.FAST2SMS_API_KEY;
+  if (!apiKey) return null;
+  const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+    method: 'POST',
+    headers: {
+      Authorization: apiKey,
+      accept: 'application/json',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      route: process.env.FAST2SMS_ROUTE || 'q',
+      message,
+      numbers: indianMobile(phone),
+      sms_details: '1',
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  return { response, data };
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('allow', 'POST');
@@ -88,11 +113,11 @@ module.exports = async function handler(req, res) {
     const expiresAt = Date.now() + 5 * 60 * 1000;
     const token = makeToken(phone, otp, expiresAt);
     const message = `Your KARVO verification OTP is ${otp}. It is valid for 5 minutes. Do not share this code.`;
-    const result = await sendViaCustomOtpApi(phone, otp, message);
+    const result = (await sendViaCustomOtpApi(phone, otp, message)) || (await sendViaFast2Sms(phone, message));
     if (!result) {
       return json(res, 500, {
         error: 'OTP sender is not configured',
-        setup: 'Set OTP_API_URL or SMS_API_URL in Vercel.',
+        setup: 'Set FAST2SMS_API_KEY, OTP_API_URL, or SMS_API_URL in Vercel.',
       });
     }
     if (!result.response.ok) return json(res, result.response.status || 502, { error: 'Unable to send OTP', details: result.data });

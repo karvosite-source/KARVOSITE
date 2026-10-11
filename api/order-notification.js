@@ -25,6 +25,10 @@ function normalizePhone(value) {
   return digits;
 }
 
+function indianMobile(phone) {
+  return String(phone || '').replace(/\D/g, '').replace(/^91/, '');
+}
+
 function money(value) {
   const n = Number(value || 0);
   if (!Number.isFinite(n) || n <= 0) return 'Quote after review';
@@ -103,6 +107,34 @@ async function sendViaSmsApi(message, order) {
   };
 }
 
+async function sendViaFast2Sms(message, order) {
+  const apiKey = process.env.ORDER_FAST2SMS_API_KEY || process.env.FAST2SMS_API_KEY;
+  if (!apiKey) return null;
+  const recipients = (process.env.ORDER_SMS_TO || process.env.SUPPORT_PHONE || '919166691274')
+    .split(',')
+    .map(normalizePhone)
+    .filter(Boolean);
+  if (order.phone) recipients.push(normalizePhone(order.phone));
+  const numbers = [...new Set(recipients)].map(indianMobile).filter(Boolean).join(',');
+  if (!numbers) return null;
+  const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+    method: 'POST',
+    headers: {
+      Authorization: apiKey,
+      accept: 'application/json',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      route: process.env.FAST2SMS_ROUTE || 'q',
+      message: message.slice(0, 1000),
+      numbers,
+      sms_details: '1',
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  return { response, data };
+}
+
 async function sendViaCustomEmailApi(subject, message, order) {
   const url = process.env.EMAIL_API_URL;
   if (!url) return null;
@@ -170,7 +202,7 @@ module.exports = async function handler(req, res) {
   const message = formatMessage(order, body.eventType);
   const results = {};
   try {
-    const sms = await sendViaSmsApi(message, order);
+    const sms = (await sendViaSmsApi(message, order)) || (await sendViaFast2Sms(message, order));
     if (sms) {
       results.sms = sms.response.ok;
       if (!sms.response.ok) results.smsDetails = sms.data;
@@ -183,7 +215,7 @@ module.exports = async function handler(req, res) {
     if (!sms && !email) {
       return json(res, 500, {
         error: 'Order notification APIs are not configured',
-        setup: 'Set SMS_API_URL/SMS_API_KEY and RESEND_API_KEY/ORDER_EMAIL_TO, or custom EMAIL_API_URL.',
+        setup: 'Set FAST2SMS_API_KEY or SMS_API_URL/SMS_API_KEY, plus RESEND_API_KEY/ORDER_EMAIL_TO or custom EMAIL_API_URL.',
       });
     }
     if ((sms && !sms.response.ok) || (email && !email.response.ok)) return json(res, 502, { error: 'One or more notifications failed', results });
