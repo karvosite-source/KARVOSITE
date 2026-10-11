@@ -115,6 +115,54 @@ async function sendViaCloudApi(message) {
   return { response, data };
 }
 
+async function sendViaCustomEmailApi(subject, message, order) {
+  const url = process.env.EMAIL_API_URL;
+  if (!url) return null;
+  const headers = { 'content-type': 'application/json' };
+  if (process.env.EMAIL_API_KEY) headers.authorization = `Bearer ${process.env.EMAIL_API_KEY}`;
+  const to = (process.env.ORDER_EMAIL_TO || process.env.SUPPORT_EMAIL || 'karvosite@gmail.com').split(',').map((x) => x.trim()).filter(Boolean);
+  if (order.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(order.email))) to.push(String(order.email).trim());
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      to: [...new Set(to)],
+      subject,
+      text: message,
+      order,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  return { response, data };
+}
+
+async function sendViaResend(subject, message, order) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  const to = (process.env.ORDER_EMAIL_TO || process.env.SUPPORT_EMAIL || 'karvosite@gmail.com').split(',').map((x) => x.trim()).filter(Boolean);
+  if (order.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(order.email))) to.push(String(order.email).trim());
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.ORDER_EMAIL_FROM || 'KARVO <orders@karvo.site>',
+      to: [...new Set(to)],
+      subject,
+      text: message,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  return { response, data };
+}
+
+async function sendEmail(message, order) {
+  const subject = `KARVO ${orderKind(order)} ${clean(order.id, 80)}`;
+  return (await sendViaCustomEmailApi(subject, message, order)) || (await sendViaResend(subject, message, order));
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('allow', 'POST');
@@ -132,22 +180,27 @@ module.exports = async function handler(req, res) {
   if (!order.id) return json(res, 400, { error: 'Missing order details' });
 
   const message = formatMessage(order, body.eventType);
+  const results = {};
   try {
-    const result = (await sendViaCustomApi(message, order)) || (await sendViaCloudApi(message));
-    if (!result) {
+    const whatsapp = (await sendViaCustomApi(message, order)) || (await sendViaCloudApi(message));
+    if (whatsapp) {
+      results.whatsapp = whatsapp.response.ok;
+      if (!whatsapp.response.ok) results.whatsappDetails = whatsapp.data;
+    }
+    const email = await sendEmail(message, order);
+    if (email) {
+      results.email = email.response.ok;
+      if (!email.response.ok) results.emailDetails = email.data;
+    }
+    if (!whatsapp && !email) {
       return json(res, 500, {
-        error: 'WhatsApp API is not configured',
-        setup: 'Set WHATSAPP_API_URL and optional WHATSAPP_API_KEY, or set WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_TO in Vercel environment variables.',
+        error: 'Order notification APIs are not configured',
+        setup: 'Set WhatsApp env vars and RESEND_API_KEY/ORDER_EMAIL_TO, or custom WHATSAPP_API_URL/EMAIL_API_URL.',
       });
     }
-    if (!result.response.ok) {
-      return json(res, result.response.status || 502, {
-        error: 'Unable to send WhatsApp message',
-        details: result.data,
-      });
-    }
-    return json(res, 200, { ok: true });
+    if ((whatsapp && !whatsapp.response.ok) || (email && !email.response.ok)) return json(res, 502, { error: 'One or more notifications failed', results });
+    return json(res, 200, { ok: true, results });
   } catch (err) {
-    return json(res, 502, { error: 'WhatsApp send failed', details: err.message });
+    return json(res, 502, { error: 'Order notification failed', details: err.message });
   }
 };

@@ -21,6 +21,36 @@ Open `customer/index.html` locally and follow footer links to the new pages. Ope
 ## WhatsApp booking notifications
 Product orders and service quote bookings call `POST /api/whatsapp-order` after the customer places an order. The endpoint sends a booking summary to the KARVO WhatsApp number when the WhatsApp credentials are configured in Vercel.
 
+## Mobile OTP verification
+Checkout now requires the customer to verify their mobile number with OTP before placing an order. `POST /api/auth-otp` can send OTPs through either:
+
+- `OTP_API_URL` / `OTP_API_KEY` or `SMS_API_URL` / `SMS_API_KEY` for a custom SMS/OTP provider
+- WhatsApp Cloud API using `WHATSAPP_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`
+
+Set a private signing secret:
+
+```sh
+vercel env add OTP_SECRET production
+```
+
+## Email order notifications
+Order notifications also support email. To send through Resend, set:
+
+```sh
+vercel env add RESEND_API_KEY production
+vercel env add ORDER_EMAIL_TO production
+vercel env add ORDER_EMAIL_FROM production
+```
+
+`ORDER_EMAIL_TO` can be a comma-separated list and defaults to `karvosite@gmail.com`. `ORDER_EMAIL_FROM` should be a verified sender/domain in Resend, for example `KARVO <orders@karvo.site>`.
+
+For another email provider, set:
+
+```sh
+vercel env add EMAIL_API_URL production
+vercel env add EMAIL_API_KEY production
+```
+
 ### Meta WhatsApp Cloud API
 Set these Vercel environment variables:
 
