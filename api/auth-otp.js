@@ -113,8 +113,9 @@ async function sendViaParKen(phone, message) {
 
   const response = await fetch(`https://sms.par-ken.com/api/smsapi?${params.toString()}`);
   const text = await response.text();
+  const ok = response.ok && isOkParKenResponse(text);
   return {
-    response: { ok: response.ok && isOkParKenResponse(text), status: response.status },
+    response: { ok, status: ok ? response.status : 502 },
     data: { provider: 'parken', result: text.trim() },
   };
 }
