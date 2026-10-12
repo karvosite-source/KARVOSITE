@@ -265,11 +265,16 @@ module.exports = async function handler(req, res) {
   const message = formatMessage(order, body.eventType);
   const results = {};
   try {
-    const smsMessage = formatSmsMessage(order, body.eventType);
-    const sms = (await sendViaSmsApi(smsMessage, order)) || (await sendViaFast2Sms(smsMessage, order)) || (await sendViaParKenSms(smsMessage, order));
+    const smsEnabled = process.env.ORDER_SMS_ENABLED === '1';
+    const smsMessage = smsEnabled ? formatSmsMessage(order, body.eventType) : '';
+    const sms = smsEnabled
+      ? (await sendViaSmsApi(smsMessage, order)) || (await sendViaFast2Sms(smsMessage, order)) || (await sendViaParKenSms(smsMessage, order))
+      : null;
     if (sms) {
       results.sms = sms.response.ok;
       if (!sms.response.ok) results.smsDetails = sms.data;
+    } else {
+      results.sms = 'disabled';
     }
     const email = await sendEmail(message, order);
     if (email) {
