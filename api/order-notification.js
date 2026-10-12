@@ -76,6 +76,29 @@ function formatMessage(order, eventType) {
   return lines.join('\n').slice(0, 3900);
 }
 
+function smsText(value, max = 60) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[^\x20-\x7E]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max);
+}
+
+function formatSmsMessage(order, eventType) {
+  const cartItems = Array.isArray(order.cartItems) ? order.cartItems : [];
+  const firstItem = cartItems[0] ? smsText(cartItems[0].name, 32) : 'Item';
+  const itemSummary = cartItems.length > 1 ? `${firstItem} +${cartItems.length - 1}` : firstItem;
+  return [
+    `KARVO ${orderKind(order)}`,
+    `ID ${smsText(order.id, 24)}`,
+    `${smsText(order.name || 'Customer', 24)} ${smsText(order.phone, 14)}`,
+    `Total ${money(order.orderTotal)}`,
+    `Items ${itemSummary}`,
+    smsText(eventType || order.paymentStatus || 'Order placed', 28),
+  ].filter(Boolean).join(' | ').slice(0, 155);
+}
+
 async function sendViaSmsApi(message, order) {
   const url = process.env.ORDER_SMS_API_URL || process.env.SMS_API_URL;
   if (!url) return null;
@@ -126,7 +149,7 @@ async function sendViaFast2Sms(message, order) {
     },
     body: JSON.stringify({
       route: process.env.FAST2SMS_ROUTE || 'q',
-      message: message.slice(0, 1000),
+      message: smsText(message, 155),
       numbers,
       sms_details: '1',
     }),
@@ -202,7 +225,8 @@ module.exports = async function handler(req, res) {
   const message = formatMessage(order, body.eventType);
   const results = {};
   try {
-    const sms = (await sendViaSmsApi(message, order)) || (await sendViaFast2Sms(message, order));
+    const smsMessage = formatSmsMessage(order, body.eventType);
+    const sms = (await sendViaSmsApi(smsMessage, order)) || (await sendViaFast2Sms(smsMessage, order));
     if (sms) {
       results.sms = sms.response.ok;
       if (!sms.response.ok) results.smsDetails = sms.data;
