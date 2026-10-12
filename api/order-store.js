@@ -31,7 +31,7 @@ async function readBlobOrders() {
 }
 
 async function writeBlobOrders(orders) {
-  const putUrl = `https://blob.vercel-storage.com/${encodeURIComponent(BLOB_NAME)}?addRandomSuffix=false&allowOverwrite=true`;
+  const putUrl = `https://blob.vercel-storage.com/${encodeURIComponent(BLOB_NAME)}?addRandomSuffix=false&allowOverwrite=true&access=private`;
   const response = await blobRequest(putUrl, {
     method: 'PUT',
     headers: {
