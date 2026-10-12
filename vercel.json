@@ -14,5 +14,19 @@
     { "source": "/terms", "destination": "/customer/terms.html" },
     { "source": "/privacy", "destination": "/customer/privacy.html" },
     { "source": "/refund", "destination": "/customer/refund.html" }
+  ],
+  "headers": [
+    {
+      "source": "/images/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
   ]
 }

@@ -211,12 +211,12 @@ items.push(
 cats.push(['Hire Professionals & Labour',KV_STAFF_IMAGE]);
 const read=(k,d)=>{try{return JSON.parse(localStorage.getItem('kv4_'+k))??d}catch{return d}};
 /* KARVO V21: category-wise AI image overrides */
-const KV_CAT_FAB='images/a32b84912ee5be81.png';
-const KV_CAT_INT='images/c99df5d3e30aaae4.png';
-const KV_CAT_IND='images/c3e4af0e5f6c03db.png';
-const KV_CAT_REN='images/caf29da821b93059.png';
-const KV_CAT_MNT='images/f0502363561c85bb.png';
-const KV_CAT_PRO='images/4c46c10704484607.png';
+const KV_CAT_FAB='images/a32b84912ee5be81.jpg';
+const KV_CAT_INT='images/c99df5d3e30aaae4.jpg';
+const KV_CAT_IND='images/c3e4af0e5f6c03db.jpg';
+const KV_CAT_REN='images/caf29da821b93059.jpg';
+const KV_CAT_MNT='images/f0502363561c85bb.jpg';
+const KV_CAT_PRO='images/4c46c10704484607.jpg';
 const KV_CATEGORY_IMAGES={
   'Fabrication': KV_CAT_FAB,
   'Interiors': KV_CAT_INT,
@@ -241,21 +241,21 @@ const KV_NEXT={};
 for(const item of items){const gallery=KV_GROUP[item.cat];if(gallery){let i=KV_NEXT[item.cat]||0;item.gallery=[...gallery.slice(i%3),...gallery.slice(0,i%3)];item.img=item.gallery[0];KV_NEXT[item.cat]=i+1;}}
 /* KARVO V23: final visual and pricing corrections from review screenshots */
 const KV_HOME_PRODUCT_IMAGE='images/4f6cc7dc98258993.webp';
-const KV_HOME_SERVICE_IMAGE='images/4c46c10704484607.png';
+const KV_HOME_SERVICE_IMAGE='images/4c46c10704484607.jpg';
 const KV_FINAL_GROUP={
-  'Fabrication':['images/a32b84912ee5be81.png','images/ee33f43c144233aa.webp','images/8e70cf289fc5c133.webp'],
-  'Interiors':['images/c99df5d3e30aaae4.png','images/45e39626f11769a8.webp','images/21962d69d503e03d.webp'],
-  'Industrial':['images/c3e4af0e5f6c03db.png','images/45ed0ffeb727005e.webp','images/5f43351620c6bc57.webp'],
-  'Renovation':['images/caf29da821b93059.png','images/369c67cfaecc7139.webp','images/1340081297c39e07.webp','images/176000d78f7d7103.webp'],
+  'Fabrication':['images/a32b84912ee5be81.jpg','images/ee33f43c144233aa.webp','images/8e70cf289fc5c133.webp'],
+  'Interiors':['images/c99df5d3e30aaae4.jpg','images/45e39626f11769a8.webp','images/21962d69d503e03d.webp'],
+  'Industrial':['images/c3e4af0e5f6c03db.jpg','images/45ed0ffeb727005e.webp','images/5f43351620c6bc57.webp'],
+  'Renovation':['images/caf29da821b93059.jpg','images/369c67cfaecc7139.webp','images/1340081297c39e07.webp','images/176000d78f7d7103.webp'],
   'Plumbing':['images/a04088b04c986188.webp','images/9617af922971557e.webp','images/f4c39a1b93114242.webp'],
-  'Painting':['images/eb4a4ed76b2634ae.webp','images/painting-exterior-house-2026.png','images/painting-wall-texture-2026.png'],
-  'Roofing & Cladding':['images/roofing-gi-sheet-2026.png','images/roofing-puf-panel-2026.png','images/roofing-gutter-downpipe-2026.png'],
-  'Flooring & Tiles':['images/flooring-premium-tile-2026.png','images/flooring-outdoor-paver-2026.png','images/flooring-industrial-repair-2026.png'],
-  'Glass & Aluminium':['images/glass-railing-install-2026.png','images/glass-aluminium-partition-2026.png','images/glass-sliding-system-2026.png'],
-  'Signage & Branding':['images/signage-led-signboard-2026.png','images/signage-shop-front-branding-2026.png','images/signage-wayfinding-office-2026.png'],
-  'Carpentry & Furniture':['images/carpentry-wardrobe-storage-2026.png','images/carpentry-tv-wall-panelling-2026.png','images/carpentry-office-workstations-2026.png'],
-  'Landscape & Outdoor':['images/landscape-terrace-balcony-2026.png','images/landscape-pergola-shade-2026.png','images/landscape-pathway-lighting-2026.png'],
-  'Hire Professionals & Labour':['images/4c46c10704484607.png','images/2f697d3c76446d32.webp','images/03b4f60b70acd5d5.webp','images/5bfd4b7f64613a1a.webp','images/28c94337fa3ad6f3.webp','images/a04088b04c986188.webp']
+  'Painting':['images/eb4a4ed76b2634ae.webp','images/painting-exterior-house-2026.jpg','images/painting-wall-texture-2026.jpg'],
+  'Roofing & Cladding':['images/roofing-gi-sheet-2026.jpg','images/roofing-puf-panel-2026.jpg','images/roofing-gutter-downpipe-2026.jpg'],
+  'Flooring & Tiles':['images/flooring-premium-tile-2026.jpg','images/flooring-outdoor-paver-2026.jpg','images/flooring-industrial-repair-2026.jpg'],
+  'Glass & Aluminium':['images/glass-railing-install-2026.jpg','images/glass-aluminium-partition-2026.jpg','images/glass-sliding-system-2026.jpg'],
+  'Signage & Branding':['images/signage-led-signboard-2026.jpg','images/signage-shop-front-branding-2026.jpg','images/signage-wayfinding-office-2026.jpg'],
+  'Carpentry & Furniture':['images/carpentry-wardrobe-storage-2026.jpg','images/carpentry-tv-wall-panelling-2026.jpg','images/carpentry-office-workstations-2026.jpg'],
+  'Landscape & Outdoor':['images/landscape-terrace-balcony-2026.jpg','images/landscape-pergola-shade-2026.jpg','images/landscape-pathway-lighting-2026.jpg'],
+  'Hire Professionals & Labour':['images/4c46c10704484607.jpg','images/2f697d3c76446d32.webp','images/03b4f60b70acd5d5.webp','images/5bfd4b7f64613a1a.webp','images/28c94337fa3ad6f3.webp','images/a04088b04c986188.webp']
 };
 const KV_FINAL_PRICES={
   'Fabrication':['₹90–₹250','/kg','MS fabrication market guide; final rate depends on steel section, weight, finish and site fitting'],
@@ -449,4 +449,16 @@ body{background:linear-gradient(180deg,#fbfdf9 0,#f7faf7 38%,#fff 100%);color:#1
 .kv-product-actions{grid-template-columns:1fr!important}.kv-product-actions .greenbtn,.kv-product-actions .kv-buy{height:44px!important;border-radius:999px!important;font-size:15px!important;padding:0 18px!important;box-shadow:none!important}.kv-product-actions .greenbtn{background:#fff!important;color:var(--md-primary)!important;border:1.5px solid #81bea1!important}.kv-product-actions .kv-buy{background:var(--md-primary)!important;color:#fff!important}
 .kv-page-shell{background:#fbfdf9!important;min-height:100vh!important}.kv-pagebar{background:rgba(255,251,255,.92)!important;backdrop-filter:blur(16px)!important;border-bottom:1px solid rgba(196,210,201,.8)!important}.kv-cart-card,.kv-side-card,.kv-login-panel,.kv-success-hero{border-radius:28px!important;border:1px solid rgba(196,210,201,.86)!important;box-shadow:0 4px 24px rgba(17,36,26,.08)!important;background:#fffbff!important}.kv-success-hero{background:linear-gradient(135deg,#0b6b49,#2aa174)!important;color:#fff!important}.kv-place{border-radius:999px!important;background:var(--md-primary)!important;box-shadow:0 8px 24px rgba(11,107,73,.22)!important}
 @media(max-width:760px){.kv-choice{padding:18px!important;border-radius:24px!important}.kv-choice-actions{grid-template-columns:1fr!important}.kv-choice-card{min-height:310px!important}.kv-choice-card b{font-size:34px!important;bottom:78px!important;left:22px!important}.kv-choice-card span{left:22px!important;right:22px!important}.kv-product-img{height:136px!important}.kv-product-body{padding:12px!important}.kv-product h3{font-size:14px!important}.kv-product-price b{font-size:20px!important}.kv-product-actions .greenbtn,.kv-product-actions .kv-buy{height:38px!important;font-size:12px!important}}
-</style></body></html>
+</style><script>
+function optimizeImages(root=document){
+  root.querySelectorAll('img').forEach((img,i)=>{
+    if(!img.hasAttribute('decoding')) img.setAttribute('decoding','async');
+    if(!img.hasAttribute('loading')) img.setAttribute('loading', i<2 ? 'eager' : 'lazy');
+    if(i<2 && !img.hasAttribute('fetchpriority')) img.setAttribute('fetchpriority','high');
+  });
+}
+optimizeImages();
+new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(n=>{
+  if(n.nodeType===1) optimizeImages(n);
+}))).observe(document.body,{childList:true,subtree:true});
+</script></body></html>
