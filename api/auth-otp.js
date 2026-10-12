@@ -98,6 +98,7 @@ async function sendViaFast2Sms(phone, message) {
 }
 
 async function sendViaParKen(phone, message) {
+  if (process.env.PARKEN_SMS_ENABLED !== '1') return null;
   const apiKey = process.env.OTP_PARKEN_API_KEY || process.env.PARKEN_API_KEY;
   if (!apiKey) return null;
   const params = new URLSearchParams({
@@ -142,11 +143,11 @@ module.exports = async function handler(req, res) {
     const expiresAt = Date.now() + 5 * 60 * 1000;
     const token = makeToken(phone, otp, expiresAt);
     const message = `Your KARVO verification OTP is ${otp}. It is valid for 5 minutes. Do not share this code.`;
-    const result = (await sendViaCustomOtpApi(phone, otp, message)) || (await sendViaParKen(phone, message)) || (await sendViaFast2Sms(phone, message));
+    const result = (await sendViaCustomOtpApi(phone, otp, message)) || (await sendViaFast2Sms(phone, message)) || (await sendViaParKen(phone, message));
     if (!result) {
       return json(res, 500, {
         error: 'OTP sender is not configured',
-        setup: 'Set PARKEN_API_KEY, FAST2SMS_API_KEY, OTP_API_URL, or SMS_API_URL in Vercel.',
+        setup: 'Set FAST2SMS_API_KEY, OTP_API_URL, SMS_API_URL, or PARKEN_API_KEY in Vercel.',
       });
     }
     if (!result.response.ok) return json(res, result.response.status || 502, { error: 'Unable to send OTP', details: result.data });

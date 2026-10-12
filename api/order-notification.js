@@ -1,3 +1,5 @@
+const { saveOrder } = require('./order-store');
+
 function json(res, status, body) {
   res.statusCode = status;
   res.setHeader('content-type', 'application/json; charset=utf-8');
@@ -165,6 +167,7 @@ async function sendViaFast2Sms(message, order) {
 }
 
 async function sendViaParKenSms(message, order) {
+  if (process.env.PARKEN_SMS_ENABLED !== '1') return null;
   const apiKey = process.env.ORDER_PARKEN_API_KEY || process.env.PARKEN_API_KEY;
   if (!apiKey) return null;
   const recipients = (process.env.ORDER_SMS_TO || process.env.SUPPORT_PHONE || '919166691274')
@@ -263,7 +266,7 @@ module.exports = async function handler(req, res) {
   const results = {};
   try {
     const smsMessage = formatSmsMessage(order, body.eventType);
-    const sms = (await sendViaSmsApi(smsMessage, order)) || (await sendViaParKenSms(smsMessage, order)) || (await sendViaFast2Sms(smsMessage, order));
+    const sms = (await sendViaSmsApi(smsMessage, order)) || (await sendViaFast2Sms(smsMessage, order)) || (await sendViaParKenSms(smsMessage, order));
     if (sms) {
       results.sms = sms.response.ok;
       if (!sms.response.ok) results.smsDetails = sms.data;
@@ -274,14 +277,19 @@ module.exports = async function handler(req, res) {
       if (!email.response.ok) results.emailDetails = email.data;
     }
     if (!sms && !email) {
+      await saveOrder(order, { ...results, configured: false, eventType: body.eventType || '' });
       return json(res, 500, {
         error: 'Order notification APIs are not configured',
-        setup: 'Set PARKEN_API_KEY, FAST2SMS_API_KEY, or SMS_API_URL/SMS_API_KEY, plus RESEND_API_KEY/ORDER_EMAIL_TO or custom EMAIL_API_URL.',
+        setup: 'Set FAST2SMS_API_KEY, SMS_API_URL/SMS_API_KEY, or PARKEN_API_KEY, plus RESEND_API_KEY/ORDER_EMAIL_TO or custom EMAIL_API_URL.',
       });
     }
+    await saveOrder(order, { ...results, eventType: body.eventType || '' });
     if ((sms && !sms.response.ok) || (email && !email.response.ok)) return json(res, 502, { error: 'One or more notifications failed', results });
     return json(res, 200, { ok: true, results });
   } catch (err) {
+    try {
+      await saveOrder(order, { ...results, error: err.message, eventType: body.eventType || '' });
+    } catch {}
     return json(res, 502, { error: 'Order notification failed', details: err.message });
   }
 };
