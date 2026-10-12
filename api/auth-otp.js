@@ -29,6 +29,12 @@ function indianMobile(phone) {
   return String(phone || '').replace(/\D/g, '').replace(/^91/, '');
 }
 
+function isOkParKenResponse(text) {
+  const value = String(text || '').trim();
+  const errorCodes = new Set(['101', '102', '103', '104', '105', '106', '107', '108', '109', '110', '111', '112', '113']);
+  return /^\d+$/.test(value) && !errorCodes.has(value);
+}
+
 function base64url(value) {
   return Buffer.from(value).toString('base64url');
 }
@@ -91,6 +97,28 @@ async function sendViaFast2Sms(phone, message) {
   return { response, data };
 }
 
+async function sendViaParKen(phone, message) {
+  const apiKey = process.env.OTP_PARKEN_API_KEY || process.env.PARKEN_API_KEY;
+  if (!apiKey) return null;
+  const params = new URLSearchParams({
+    key: apiKey,
+    route: process.env.OTP_PARKEN_ROUTE || process.env.PARKEN_OTP_ROUTE || process.env.PARKEN_ROUTE || '4',
+    type: process.env.PARKEN_TYPE || '1',
+    sender: process.env.OTP_PARKEN_SENDER || process.env.PARKEN_SENDER || 'IMSTRG',
+    number: indianMobile(phone),
+    sms: String(message || '').replace(/[^\x20-\x7E]/g, '').slice(0, 155),
+  });
+  const templateId = process.env.OTP_PARKEN_TEMPLATE_ID || process.env.PARKEN_OTP_TEMPLATE_ID || process.env.PARKEN_TEMPLATE_ID;
+  if (templateId) params.set('templateid', templateId);
+
+  const response = await fetch(`https://sms.par-ken.com/api/smsapi?${params.toString()}`);
+  const text = await response.text();
+  return {
+    response: { ok: response.ok && isOkParKenResponse(text), status: response.status },
+    data: { provider: 'parken', result: text.trim() },
+  };
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('allow', 'POST');
@@ -113,11 +141,11 @@ module.exports = async function handler(req, res) {
     const expiresAt = Date.now() + 5 * 60 * 1000;
     const token = makeToken(phone, otp, expiresAt);
     const message = `Your KARVO verification OTP is ${otp}. It is valid for 5 minutes. Do not share this code.`;
-    const result = (await sendViaCustomOtpApi(phone, otp, message)) || (await sendViaFast2Sms(phone, message));
+    const result = (await sendViaCustomOtpApi(phone, otp, message)) || (await sendViaParKen(phone, message)) || (await sendViaFast2Sms(phone, message));
     if (!result) {
       return json(res, 500, {
         error: 'OTP sender is not configured',
-        setup: 'Set FAST2SMS_API_KEY, OTP_API_URL, or SMS_API_URL in Vercel.',
+        setup: 'Set PARKEN_API_KEY, FAST2SMS_API_KEY, OTP_API_URL, or SMS_API_URL in Vercel.',
       });
     }
     if (!result.response.ok) return json(res, result.response.status || 502, { error: 'Unable to send OTP', details: result.data });

@@ -29,6 +29,12 @@ function indianMobile(phone) {
   return String(phone || '').replace(/\D/g, '').replace(/^91/, '');
 }
 
+function isOkParKenResponse(text) {
+  const value = String(text || '').trim();
+  const errorCodes = new Set(['101', '102', '103', '104', '105', '106', '107', '108', '109', '110', '111', '112', '113']);
+  return /^\d+$/.test(value) && !errorCodes.has(value);
+}
+
 function money(value) {
   const n = Number(value || 0);
   if (!Number.isFinite(n) || n <= 0) return 'Quote after review';
@@ -158,6 +164,36 @@ async function sendViaFast2Sms(message, order) {
   return { response, data };
 }
 
+async function sendViaParKenSms(message, order) {
+  const apiKey = process.env.ORDER_PARKEN_API_KEY || process.env.PARKEN_API_KEY;
+  if (!apiKey) return null;
+  const recipients = (process.env.ORDER_SMS_TO || process.env.SUPPORT_PHONE || '919166691274')
+    .split(',')
+    .map(normalizePhone)
+    .filter(Boolean);
+  if (order.phone) recipients.push(normalizePhone(order.phone));
+  const numbers = [...new Set(recipients)].map(indianMobile).filter(Boolean).join(',');
+  if (!numbers) return null;
+
+  const params = new URLSearchParams({
+    key: apiKey,
+    route: process.env.ORDER_PARKEN_ROUTE || process.env.PARKEN_ROUTE || '2',
+    type: process.env.PARKEN_TYPE || '1',
+    sender: process.env.ORDER_PARKEN_SENDER || process.env.PARKEN_SENDER || 'IMSTRG',
+    number: numbers,
+    sms: smsText(message, 155),
+  });
+  const templateId = process.env.ORDER_PARKEN_TEMPLATE_ID || process.env.PARKEN_TEMPLATE_ID;
+  if (templateId) params.set('templateid', templateId);
+
+  const response = await fetch(`https://sms.par-ken.com/api/smsapi?${params.toString()}`);
+  const text = await response.text();
+  return {
+    response: { ok: response.ok && isOkParKenResponse(text), status: response.status },
+    data: { provider: 'parken', result: text.trim() },
+  };
+}
+
 async function sendViaCustomEmailApi(subject, message, order) {
   const url = process.env.EMAIL_API_URL;
   if (!url) return null;
@@ -226,7 +262,7 @@ module.exports = async function handler(req, res) {
   const results = {};
   try {
     const smsMessage = formatSmsMessage(order, body.eventType);
-    const sms = (await sendViaSmsApi(smsMessage, order)) || (await sendViaFast2Sms(smsMessage, order));
+    const sms = (await sendViaSmsApi(smsMessage, order)) || (await sendViaParKenSms(smsMessage, order)) || (await sendViaFast2Sms(smsMessage, order));
     if (sms) {
       results.sms = sms.response.ok;
       if (!sms.response.ok) results.smsDetails = sms.data;
@@ -239,7 +275,7 @@ module.exports = async function handler(req, res) {
     if (!sms && !email) {
       return json(res, 500, {
         error: 'Order notification APIs are not configured',
-        setup: 'Set FAST2SMS_API_KEY or SMS_API_URL/SMS_API_KEY, plus RESEND_API_KEY/ORDER_EMAIL_TO or custom EMAIL_API_URL.',
+        setup: 'Set PARKEN_API_KEY, FAST2SMS_API_KEY, or SMS_API_URL/SMS_API_KEY, plus RESEND_API_KEY/ORDER_EMAIL_TO or custom EMAIL_API_URL.',
       });
     }
     if ((sms && !sms.response.ok) || (email && !email.response.ok)) return json(res, 502, { error: 'One or more notifications failed', results });
