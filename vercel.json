@@ -5,6 +5,7 @@
   "rewrites": [
     { "source": "/images/:path*", "destination": "/customer/images/:path*" },
     { "source": "/admin", "destination": "/admin/index.html" },
+    { "source": "/products", "destination": "/customer/index.html" },
     { "source": "/products/:slug", "destination": "/customer/index.html" },
     { "source": "/categories/:slug", "destination": "/customer/index.html" },
     { "source": "/categories/:slug/:subslug", "destination": "/customer/index.html" },
