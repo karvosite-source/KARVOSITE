@@ -90,6 +90,11 @@ async function sendViaFast2Sms(phone, otp, message) {
     payload.variables_values = otp;
   } else {
     payload.message = message;
+    if (route === 'dlt') {
+      payload.sender_id = process.env.FAST2SMS_SENDER_ID || 'SMSINI';
+      if (process.env.FAST2SMS_ENTITY_ID) payload.entity_id = process.env.FAST2SMS_ENTITY_ID;
+      if (process.env.FAST2SMS_TEMPLATE_ID) payload.template_id = process.env.FAST2SMS_TEMPLATE_ID;
+    }
   }
   const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
     method: 'POST',
