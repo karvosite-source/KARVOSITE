@@ -8,42 +8,38 @@ function hasBlob() {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 }
 
-async function blobRequest(url, options = {}) {
-  return fetch(url, {
-    ...options,
-    headers: {
-      authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
-      ...(options.headers || {}),
-    },
-  });
+async function blobSdk() {
+  return import('@vercel/blob');
 }
 
 async function readBlobOrders() {
-  const listUrl = `https://blob.vercel-storage.com/?prefix=${encodeURIComponent(BLOB_NAME)}&limit=1`;
-  const list = await blobRequest(listUrl);
-  if (!list.ok) throw new Error(`Blob list failed (${list.status})`);
-  const data = await list.json();
+  const { list } = await blobSdk();
+  const data = await list({
+    prefix: BLOB_NAME,
+    limit: 1,
+    token: process.env.BLOB_READ_WRITE_TOKEN,
+  });
   const item = Array.isArray(data.blobs) ? data.blobs.find((x) => x.pathname === BLOB_NAME) : null;
   if (!item?.url) return [];
-  const file = await fetch(item.url, { cache: 'no-store' });
+  const file = await fetch(item.url, {
+    cache: 'no-store',
+    headers: {
+      authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+    },
+  });
   if (!file.ok) throw new Error(`Blob read failed (${file.status})`);
   return file.json();
 }
 
 async function writeBlobOrders(orders) {
-  const putUrl = `https://blob.vercel-storage.com/${encodeURIComponent(BLOB_NAME)}?addRandomSuffix=false&allowOverwrite=true&access=private`;
-  const response = await blobRequest(putUrl, {
-    method: 'PUT',
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-      'x-content-type': 'application/json; charset=utf-8',
-    },
-    body: JSON.stringify(orders, null, 2),
+  const { put } = await blobSdk();
+  await put(BLOB_NAME, JSON.stringify(orders, null, 2), {
+    access: 'private',
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: 'application/json; charset=utf-8',
+    token: process.env.BLOB_READ_WRITE_TOKEN,
   });
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`Blob write failed (${response.status}) ${text}`.trim());
-  }
 }
 
 async function readLocalOrders() {

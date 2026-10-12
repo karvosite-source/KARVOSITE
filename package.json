@@ -3,5 +3,8 @@
   "private": true,
   "scripts": {
     "vercel-build": "node -e \"console.log('Static KARVO deployment: no build step required')\""
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.8.1"
   }
 }
