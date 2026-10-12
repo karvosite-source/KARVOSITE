@@ -1,4 +1,5 @@
 const { hasBlob, readOrders } = require('./order-store');
+const { requireAdmin } = require('./admin-auth-lib');
 
 function json(res, status, body) {
   res.statusCode = status;
@@ -12,6 +13,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('allow', 'GET');
     return json(res, 405, { error: 'Method not allowed' });
   }
+  if (!requireAdmin(req, res)) return;
 
   try {
     const orders = await readOrders();
