@@ -4,6 +4,7 @@
   "outputDirectory": ".",
   "rewrites": [
     { "source": "/images/:path*", "destination": "/customer/images/:path*" },
+    { "source": "/tracking/:path*", "destination": "/customer/tracking/:path*" },
     { "source": "/admin", "destination": "/admin/index.html" },
     { "source": "/products", "destination": "/customer/index.html" },
     { "source": "/products/:slug", "destination": "/customer/index.html" },
