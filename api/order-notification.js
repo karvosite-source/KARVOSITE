@@ -113,7 +113,7 @@ async function sendViaSmsApi(message, order) {
   const headers = { 'content-type': 'application/json' };
   const key = process.env.ORDER_SMS_API_KEY || process.env.SMS_API_KEY;
   if (key) headers.authorization = `Bearer ${key}`;
-  const recipients = (process.env.ORDER_SMS_TO || process.env.SUPPORT_PHONE || '919166691274')
+  const recipients = (process.env.ORDER_SMS_TO || process.env.SUPPORT_PHONE || '919352401986')
     .split(',')
     .map(normalizePhone)
     .filter(Boolean);
@@ -141,7 +141,7 @@ async function sendViaSmsApi(message, order) {
 async function sendViaFast2Sms(message, order) {
   const apiKey = process.env.ORDER_FAST2SMS_API_KEY || process.env.FAST2SMS_API_KEY;
   if (!apiKey) return null;
-  const recipients = (process.env.ORDER_SMS_TO || process.env.SUPPORT_PHONE || '919166691274')
+  const recipients = (process.env.ORDER_SMS_TO || process.env.SUPPORT_PHONE || '919352401986')
     .split(',')
     .map(normalizePhone)
     .filter(Boolean);
@@ -170,7 +170,7 @@ async function sendViaParKenSms(message, order) {
   if (process.env.PARKEN_SMS_ENABLED !== '1') return null;
   const apiKey = process.env.ORDER_PARKEN_API_KEY || process.env.PARKEN_API_KEY;
   if (!apiKey) return null;
-  const recipients = (process.env.ORDER_SMS_TO || process.env.SUPPORT_PHONE || '919166691274')
+  const recipients = (process.env.ORDER_SMS_TO || process.env.SUPPORT_PHONE || '919352401986')
     .split(',')
     .map(normalizePhone)
     .filter(Boolean);
@@ -265,7 +265,7 @@ module.exports = async function handler(req, res) {
   const message = formatMessage(order, body.eventType);
   const results = {};
   try {
-    const smsEnabled = process.env.ORDER_SMS_ENABLED === '1';
+    const smsEnabled = false;
     const smsMessage = smsEnabled ? formatSmsMessage(order, body.eventType) : '';
     const sms = smsEnabled
       ? (await sendViaSmsApi(smsMessage, order)) || (await sendViaFast2Sms(smsMessage, order)) || (await sendViaParKenSms(smsMessage, order))
@@ -285,7 +285,7 @@ module.exports = async function handler(req, res) {
       await saveOrder(order, { ...results, configured: false, eventType: body.eventType || '' });
       return json(res, 500, {
         error: 'Order notification APIs are not configured',
-        setup: 'Set FAST2SMS_API_KEY, SMS_API_URL/SMS_API_KEY, or PARKEN_API_KEY, plus RESEND_API_KEY/ORDER_EMAIL_TO or custom EMAIL_API_URL.',
+        setup: 'Set RESEND_API_KEY/ORDER_EMAIL_TO or custom EMAIL_API_URL.',
       });
     }
     await saveOrder(order, { ...results, eventType: body.eventType || '' });

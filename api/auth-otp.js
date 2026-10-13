@@ -61,7 +61,12 @@ function readToken(token) {
   }
 }
 
+function otpSmsEnabled() {
+  return process.env.OTP_SMS_ENABLED !== '0';
+}
+
 async function sendViaCustomOtpApi(phone, otp, message) {
+  if (!otpSmsEnabled()) return null;
   const url = process.env.OTP_API_URL || process.env.SMS_API_URL;
   if (!url) return null;
   const headers = { 'content-type': 'application/json' };
@@ -77,6 +82,7 @@ async function sendViaCustomOtpApi(phone, otp, message) {
 }
 
 async function sendViaFast2Sms(phone, otp, message) {
+  if (!otpSmsEnabled()) return null;
   const apiKey = process.env.FAST2SMS_API_KEY;
   if (!apiKey) return null;
   const route = process.env.FAST2SMS_ROUTE || 'q';
@@ -110,7 +116,7 @@ async function sendViaFast2Sms(phone, otp, message) {
 }
 
 async function sendViaParKen(phone, message) {
-  if (process.env.PARKEN_SMS_ENABLED !== '1') return null;
+  if (!otpSmsEnabled()) return null;
   const apiKey = process.env.OTP_PARKEN_API_KEY || process.env.PARKEN_API_KEY;
   if (!apiKey) return null;
   const params = new URLSearchParams({
